@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simulador Pro - Estructura y Flujo CL3</title>
+    <title>IDE Educativo CL3 - Proyecto Pokémon</title>
     <style>
         :root {
             --bg: #0d1117; --side: #161b22; --accent: #58a6ff;
@@ -16,26 +16,30 @@
         }
         .main-grid { display: grid; grid-template-columns: 280px 1fr 380px; flex-grow: 1; overflow: hidden; }
 
-        /* Explorador con Tooltips Corregidos */
-        .sidebar { background: var(--side); border-right: 1px solid #30363d; padding: 15px; font-size: 13px; z-index: 10; }
+        /* Explorador con Tooltips Interactivos */
+        .sidebar { background: var(--side); border-right: 1px solid #30363d; padding: 15px; font-size: 13px; z-index: 100; }
         .file-item { 
             padding: 6px 10px; cursor: help; border-radius: 4px; 
             display: flex; align-items: center; gap: 8px; position: relative;
+            text-decoration: none; color: inherit;
         }
         .file-item:hover { background: #21262d; color: var(--accent); }
+        .file-item.clickable { cursor: pointer; border: 1px solid transparent; }
+        .file-item.clickable:hover { border-color: var(--accent); }
 
-        /* La "Tarjetita" de descripción */
-        .file-item .desc-box {
+        /* Tarjetita de Definición */
+        .desc-box {
             display: none; position: absolute; left: 100%; top: 0;
-            width: 240px; background: #ffffff; color: #1f2328;
-            padding: 12px; border-radius: 8px; border-left: 4px solid var(--accent);
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5); z-index: 999;
+            width: 250px; background: #ffffff; color: #1f2328;
+            padding: 12px; border-radius: 8px; border-left: 5px solid var(--accent);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.6); z-index: 9999;
             font-size: 11px; line-height: 1.4; pointer-events: none;
         }
         .file-item:hover .desc-box { display: block; }
-        .desc-box b { display: block; color: #0969da; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .desc-box b { display: block; color: #0969da; margin-bottom: 4px; text-transform: uppercase; }
+        .desc-box i { display: block; margin-top: 8px; color: var(--success); font-weight: bold; }
 
-        /* Área Central */
+        /* Visualización */
         .viz { position: relative; background: #010409; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
         .node-list { display: flex; gap: 15px; flex-wrap: wrap; justify-content: center; z-index: 5; max-width: 500px; }
@@ -47,14 +51,12 @@
         .pk-card {
             background: white; color: black; padding: 15px; border-radius: 12px; text-align: center;
             width: 140px; border: 4px solid #3b4cca; animation: pop 0.4s ease-out; box-shadow: 0 10px 20px rgba(0,0,0,0.4);
-            transition: all 0.3s ease;
         }
         .pk-card img { width: 90px; }
         .pk-card.shiny { border-color: #ffde00; background: #fffdf0; box-shadow: 0 0 20px #ffde00; }
         .pk-card button { background: #238636; color: white; border: none; padding: 6px 12px; border-radius: 5px; cursor: pointer; margin-top: 10px; font-weight: bold; }
-        .pk-card button.btn-shiny { background: #e62222; }
 
-        /* Consola Numerada */
+        /* Consola */
         .console-area { background: #010409; border-left: 1px solid #30363d; display: flex; flex-direction: column; }
         .log-container { flex-grow: 1; padding: 20px; overflow-y: auto; font-family: 'Consolas', monospace; font-size: 12px; color: #a5d6ff; }
         .log-row { display: flex; gap: 12px; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #161b22; }
@@ -76,30 +78,34 @@
         <div style="font-weight: bold; color: #8b949e; margin-bottom: 15px; font-size: 11px;">PROYECTO: CL3 / clase2</div>
         
         <div class="file-item">📄 index.html
-            <div class="desc-box"><b>Definición:</b> Raíz del proyecto.<br>Es el archivo HTML base que contiene el <code>&lt;div id="root"&gt;</code> donde se montará React.</div>
+            <div class="desc-box"><b>Definición:</b> Plantilla HTML.<br>Contiene el punto de anclaje (#root) donde React inyecta todo el código dinámico.</div>
         </div>
 
         <div style="margin: 10px 0 5px 5px; font-size: 11px; color: #484f58;">📁 src</div>
         
         <div class="file-item" style="margin-left: 15px;">📄 main.tsx
-            <div class="desc-box"><b>Definición:</b> Puerta de entrada.<br>Conecta la lógica de React con el DOM real del navegador usando el ID root.</div>
+            <div class="desc-box"><b>Definición:</b> Punto de entrada.<br>Usa createRoot para renderizar el componente App dentro del DOM real.</div>
         </div>
 
         <div class="file-item" style="margin-left: 15px;">📄 App.tsx
-            <div class="desc-box"><b>Definición:</b> Componente General.<br>Organiza la estructura de la página y reparte los datos del Hook a las Cards.</div>
+            <div class="desc-box"><b>Definición:</b> Orquestador.<br>Gestiona qué componentes se muestran y distribuye los datos que vienen del Hook.</div>
         </div>
 
         <div class="file-item" style="margin-left: 15px;">📁 hooks</div>
-        <div class="file-item" style="margin-left: 30px;">📄 usePokemons.ts
-            <div class="desc-box"><b>Definición:</b> Motor de Datos.<br>Maneja el <code>fetch</code> a la API y el estado global (<code>useState</code>).</div>
-        </div>
+        <a href="sss.html" class="file-item clickable" style="margin-left: 30px; color: var(--accent); border: 1px solid rgba(88, 166, 255, 0.3);">
+            📄 usePokemons.ts
+            <div class="desc-box">
+                <b>Definición:</b> Motor de Lógica.<br>Encapsula el fetch a la API, el estado (useState) y las funciones de evolución.
+                <i>👉 HAZ CLIC PARA VER CÓDIGO INTERNO</i>
+            </div>
+        </a>
 
         <div class="file-item" style="margin-left: 15px;">📁 components</div>
         <div class="file-item" style="margin-left: 30px;">📄 Card.tsx
-            <div class="desc-box"><b>Definición:</b> Interfaz Visual.<br>Recibe propiedades (props) y las muestra. Detecta los clics del usuario.</div>
+            <div class="desc-box"><b>Definición:</b> Componente Visual.<br>Recibe información vía props y la transforma en interfaz visual.</div>
         </div>
         <div class="file-item" style="margin-left: 30px;"># Card.css
-            <div class="desc-box"><b>Definición:</b> Hoja de estilos.<br>Contiene las reglas visuales para los estados normal y shiny (colores, bordes).</div>
+            <div class="desc-box"><b>Definición:</b> Capa de Estilo.<br>Define bordes, colores y efectos para diferenciar estados.</div>
         </div>
     </div>
 
@@ -114,14 +120,14 @@
             <div class="node" id="n-card">Card.tsx</div>
         </div>
         <div class="render-box" id="render-zone">
-            <div style="color: #30363d; font-style: italic;">Inicia el ciclo para ver el flujo...</div>
+            <div style="color: #30363d; font-style: italic;">Presiona NPM RUN DEV para iniciar...</div>
         </div>
     </div>
 
     <div class="console-area">
         <div style="padding: 12px; background: #161b22; font-size: 11px; font-weight: bold; border-bottom: 1px solid #30363d;">CONSOLA DE EVENTOS</div>
         <div class="log-container" id="log-box">
-            <p>> Sistema listo. Haz clic en el botón inferior.</p>
+            <p>> Sistema listo. Usa el botón inferior.</p>
         </div>
     </div>
 </div>
@@ -174,61 +180,51 @@
 
     async function run() {
         startBtn.disabled = true; step = 1; logBox.innerHTML = '';
-        addLog("<b>Inicio:</b> El navegador carga <code>index.html</code> (Plantilla base).");
+        addLog("<b>1. index.html:</b> El navegador lee el archivo base.");
         await flow('n-html', 'n-main', '#e34c26');
 
-        addLog("<b>Enlace:</b> <code>main.tsx</code> busca el div con <code>id='root'</code>.");
+        addLog("<b>2. main.tsx:</b> Busca el div#root y empieza a <b>montar la vista</b>.");
         await flow('n-main', 'n-app');
 
-        addLog("<b>Lógica:</b> <code>usePokemons</code> inicia el fetch y procesa el JSON.");
+        addLog("<b>3. usePokemons:</b> El Hook se activa e inicia el fetch de datos.");
         await flow('n-app', 'n-hook');
 
-        addLog("<b>Estado:</b> El Hook devuelve el listado cargado a <code>App.tsx</code>.");
+        addLog("<b>4. Estado:</b> El Hook devuelve los datos al componente App.");
         await flow('n-hook', 'n-app');
 
-        addLog("<b>Render:</b> App genera la <code>Card.tsx</code> inyectando las props.");
+        addLog("<b>5. Render:</b> App genera la Card inyectando las props.");
         await flow('n-app', 'n-card');
 
         renderZone.innerHTML = `
             <div class="pk-card" id="pk">
                 <img id="pk-img" src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/25.png">
                 <h4 id="pk-name">Pikachu</h4>
-                <button id="pk-btn" onclick="evolve()">EVOLUCIONAR</button>
+                <button onclick="evolve()">EVOLUCIONAR</button>
             </div>`;
-        addLog("<b>Final:</b> ¡Interfaz dibujada y lista!");
+        addLog("<b>Final:</b> ¡Vista montada correctamente!");
     }
 
     async function evolve() {
         const pkCard = document.getElementById('pk');
         const pkImg = document.getElementById('pk-img');
         const pkName = document.getElementById('pk-name');
-        const pkBtn = document.getElementById('pk-btn');
         const isShiny = pkCard.classList.contains('shiny');
 
-        // Reiniciar contador de pasos para la interacción si se desea, o continuar
-        addLog(isShiny ? "<b>Acción:</b> Click. Des-evolucionando..." : "<b>Acción:</b> Click. Evolucionando...");
+        addLog(isShiny ? "<b>Acción:</b> Click. Revertiendo..." : "<b>Acción:</b> Click. Evolucionando...");
         await flow('n-card', 'n-app', '#d29922');
-        
-        addLog("<b>Actualización:</b> Se altera el estado en el Hook.");
         await flow('n-app', 'n-hook', '#d29922');
         
-        // Lógica de Toggle (Alternar)
         if (isShiny) {
             pkCard.classList.remove('shiny');
             pkImg.src = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/25.png";
             pkName.innerText = "Pikachu";
-            pkBtn.innerText = "EVOLUCIONAR";
-            pkBtn.className = "";
-            addLog("<b>Re-render:</b> Estado base restaurado.");
         } else {
             pkCard.classList.add('shiny');
             pkImg.src = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/shiny/25.png";
             pkName.innerText = "Pikachu Shiny";
-            pkBtn.innerText = "REVERTIR";
-            pkBtn.className = "btn-shiny";
-            addLog("<b>Re-render:</b> Estado Shiny aplicado.");
         }
         
+        addLog("<b>Re-render:</b> React actualiza el componente visual.");
         await flow('n-hook', 'n-app');
         await flow('n-app', 'n-card');
         startBtn.disabled = false;
