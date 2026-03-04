@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador Definitivo - CL3</title>
+    <style>
+        :root {
+            --bg: #0d1117; --side: #161b22; --accent: #58a6ff;
+            --text: #c9d1d9; --success: #238636; --warning: #d29922;
+            --kw: #ff7b72; --fn: #d2a8ff; --vr: #79c0ff; --st: #a5d6ff;
+        }
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg); color: var(--text);
+            margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden;
+        }
+        .main-grid { display: grid; grid-template-columns: 280px 1fr 380px; flex-grow: 1; overflow: hidden; }
+
+        /* --- SIDEBAR EXPLORER --- */
+        .sidebar { background: var(--side); border-right: 1px solid #30363d; padding: 15px; font-size: 13px; z-index: 100; }
+        .file-item { padding: 6px 10px; cursor: help; border-radius: 4px; display: flex; align-items: center; gap: 8px; position: relative; }
+        .file-item:hover { background: #21262d; color: var(--accent); }
+
+        /* --- TOOLTIPS (Sidebar y Code) --- */
+        .tooltip-box {
+            display: none; position: absolute; left: 105%; top: 0;
+            width: 260px; background: #ffffff; color: #1f2328;
+            padding: 12px; border-radius: 8px; border-left: 5px solid var(--accent);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.6); z-index: 9999;
+            font-size: 12px; line-height: 1.4; pointer-events: none;
+        }
+        .file-item:hover .tooltip-box, .code-line:hover .tooltip-box { display: block; }
+        .tooltip-box b { display: block; color: #0969da; margin-bottom: 4px; text-transform: uppercase; font-size: 11px; }
+
+        /* --- CENTRAL VISUALIZER --- */
+        .viz { position: relative; background: #010409; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
+        
+        /* Código con Resaltado */
+        .code-block {
+            background: #161b22; border: 1px solid #30363d; padding: 20px; border-radius: 10px;
+            width: 90%; font-family: 'Fira Code', monospace; font-size: 13px; line-height: 1.8;
+            margin-bottom: 20px; z-index: 10;
+        }
+        .code-line { position: relative; cursor: help; display: block; padding: 0 5px; border-radius: 3px; }
+        .code-line:hover { background: #21262d; }
+        .code-line .tooltip-box { left: 50%; top: auto; bottom: 120%; transform: translateX(-50%); }
+
+        /* Render Zone */
+        .render-box { height: 220px; width: 100%; border-top: 1px dashed #30363d; display: flex; justify-content: center; align-items: center; z-index: 10; }
+        .pk-card {
+            background: white; color: black; padding: 15px; border-radius: 12px; text-align: center;
+            width: 140px; border: 4px solid #3b4cca; animation: pop 0.4s ease-out; box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+        }
+        .pk-card img { width: 90px; }
+        .pk-card.shiny { border-color: #ffde00; background: #fffdf0; box-shadow: 0 0 25px #ffde00; }
+        .pk-card button { background: var(--success); color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; margin-top: 10px; font-weight: bold; }
+
+        /* --- CONSOLE --- */
+        .console { background: #010409; border-left: 1px solid #30363d; display: flex; flex-direction: column; }
+        .log-area { flex-grow: 1; padding: 20px; overflow-y: auto; font-family: monospace; font-size: 12px; color: #a5d6ff; }
+        .log-row { display: flex; gap: 12px; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #161b22; }
+        .log-badge { background: var(--accent); color: #000; font-weight: bold; min-width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 4px; }
+
+        .particle { position: absolute; width: 12px; height: 12px; border-radius: 50%; display: none; z-index: 100; box-shadow: 0 0 10px var(--accent); }
+        footer { padding: 15px; background: var(--side); border-top: 1px solid #30363d; text-align: center; }
+        .play-btn { background: var(--success); color: white; border: none; padding: 12px 35px; border-radius: 8px; font-weight: bold; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+<div class="main-grid">
+    <div class="sidebar">
+        <div style="font-weight: bold; color: #8b949e; margin-bottom: 15px; font-size: 11px;">EXPLORER: CL3 / clase2</div>
+        
+        <div class="file-item">📄 index.html
+            <div class="tooltip-box"><b>Archivo Base</b><br>Contiene el <code>div#root</code> donde React inyecta la aplicación.</div>
+        </div>
+        <div style="margin: 10px 0 5px 5px; font-size: 11px; color: #484f58;">📁 src</div>
+        <div class="file-item" style="margin-left: 15px;">📄 main.tsx
+            <div class="tooltip-box"><b>Punto de Entrada</b><br>Renderiza el componente App dentro del DOM real del navegador.</div>
+        </div>
+        <div class="file-item" style="margin-left: 15px;">📄 App.tsx
+            <div class="tooltip-box"><b>Componente Padre</b><br>Mapea la lista de pokémones y genera las tarjetas visuales.</div>
+        </div>
+        <div class="file-item" style="margin-left: 15px; color: var(--accent)">📁 hooks / usePokemons.ts
+            <div class="tooltip-box"><b>Lógica de Negocio</b><br>Gestiona el fetch de la API y el estado de evolución.</div>
+        </div>
+        <div class="file-item" style="margin-left: 15px;">📁 components / Card.tsx
+            <div class="tooltip-box"><b>Componente de Vista</b><br>Recibe props y muestra la información del Pokémon.</div>
+        </div>
+    </div>
+
+    <div class="viz" id="map">
+        <div id="particle" class="particle"></div>
+        <div class="code-block">
+            <span class="code-line"><span style="color:var(--kw)">const</span> [<span style="color:var(--vr)">pokemons</span>, <span style="color:var(--fn)">setPokemon</span>] = <span style="color:var(--fn)">useState</span>([]);
+                <div class="tooltip-box"><b>useState</b><br>Crea la memoria interna para guardar el listado de pokémones.</div>
+            </span>
+            <span class="code-line"><span style="color:var(--kw)">const</span> <span style="color:var(--fn)">traerPokemons</span> = <span style="color:var(--kw)">async</span> () => { ... };
+                <div class="tooltip-box"><b>Async Function</b><br>Llamado asíncrono a la PokeAPI para obtener los datos.</div>
+            </span>
+            <span class="code-line" id="line-effect"><span style="color:var(--fn)">useEffect</span>(() => { <span style="color:var(--fn)">traerPokemons</span>() }, []);
+                <div class="tooltip-box"><b>useEffect</b><br>Se ejecuta al montar el componente para iniciar la carga inicial.</div>
+            </span>
+            <span class="code-line" id="line-evo"><span style="color:var(--kw)">const</span> <span style="color:var(--fn)">evolucionar</span> = (<span style="color:var(--vr)">id</span>) => { ... };
+                <div class="tooltip-box"><b>Lógica de Cambio</b><br>Busca un Pokémon y alterna su estado entre normal y shiny.</div>
+            </span>
+        </div>
+
+        <div class="render-box" id="render-zone">
+            <div style="color: #484f58; font-style: italic;">Presiona NPM RUN DEV para iniciar...</div>
+        </div>
+    </div>
+
+    <div class="console">
+        <div style="padding: 12px; background: #161b22; font-size: 11px; font-weight: bold;">EVENTOS DE REACT</div>
+        <div class="log-area" id="log-box">
+            <p>> Esperando ejecución...</p>
+        </div>
+    </div>
+</div>
+
+<footer>
+    <button class="play-btn" id="startBtn" onclick="run()">NPM RUN DEV</button>
+</footer>
+
+<script>
+    const logBox = document.getElementById('log-box');
+    const renderZone = document.getElementById('render-zone');
+    const startBtn = document.getElementById('startBtn');
+    let step = 1;
+
+    function addLog(txt) {
+        const div = document.createElement('div');
+        div.className = 'log-row';
+        div.innerHTML = `<div class="log-badge">${step++}</div><div>${txt}</div>`;
+        logBox.prepend(div);
+    }
+
+    async function run() {
+        startBtn.disabled = true; step = 1; logBox.innerHTML = '';
+        addLog("<b>index.html:</b> Navegador carga la plantilla base.");
+        await new Promise(r => setTimeout(r, 800));
+        addLog("<b>main.tsx:</b> Inyectando React en el div#root.");
+        await new Promise(r => setTimeout(r, 800));
+        
+        document.getElementById('line-effect').style.background = "#23863655";
+        addLog("<b>useEffect:</b> Disparando carga de la PokeAPI.");
+        await new Promise(r => setTimeout(r, 1200));
+        document.getElementById('line-effect').style.background = "transparent";
+
+        renderZone.innerHTML = `
+            <div class="pk-card" id="pk">
+                <img id="pk-img" src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/25.png">
+                <h4 id="pk-name">Pikachu</h4>
+                <button id="pk-btn" onclick="evolve()">EVOLUCIONAR</button>
+            </div>`;
+        addLog("<b>Renderizado:</b> Tarjeta generada con éxito.");
+    }
+
+    async function evolve() {
+        const card = document.getElementById('pk');
+        const img = document.getElementById('pk-img');
+        const name = document.getElementById('pk-name');
+        const btn = document.getElementById('pk-btn');
+        const isShiny = card.classList.contains('shiny');
+
+        addLog(isShiny ? "<b>Acción:</b> Click. Revertiendo estado..." : "<b>Acción:</b> Click. Iniciando evolución...");
+        document.getElementById('line-evo').style.background = "#d2992255";
+        await new Promise(r => setTimeout(r, 800));
+
+        if (isShiny) {
+            card.classList.remove('shiny');
+            img.src = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/25.png";
+            name.innerText = "Pikachu";
+            btn.innerText = "EVOLUCIONAR";
+            btn.style.background = "#238636";
+        } else {
+            card.classList.add('shiny');
+            img.src = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/shiny/25.png";
+            name.innerText = "Pikachu Shiny";
+            btn.innerText = "REVERTIR";
+            btn.style.background = "#e62222";
+        }
+        
+        document.getElementById('line-evo').style.background = "transparent";
+        addLog("<b>setPokemon:</b> Estado actualizado en el Hook.");
+        startBtn.disabled = false;
+    }
+</script>
+</body>
+</html>
