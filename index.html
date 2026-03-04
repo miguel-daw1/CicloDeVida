@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador Pro - Estructura y Flujo CL3</title>
+    <style>
+        :root {
+            --bg: #0d1117; --side: #161b22; --accent: #58a6ff;
+            --text: #c9d1d9; --success: #238636; --warning: #d29922;
+        }
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg); color: var(--text);
+            margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden;
+        }
+        .main-grid { display: grid; grid-template-columns: 280px 1fr 380px; flex-grow: 1; overflow: hidden; }
+
+        /* Explorador con Tooltips Corregidos */
+        .sidebar { background: var(--side); border-right: 1px solid #30363d; padding: 15px; font-size: 13px; z-index: 10; }
+        .file-item { 
+            padding: 6px 10px; cursor: help; border-radius: 4px; 
+            display: flex; align-items: center; gap: 8px; position: relative;
+        }
+        .file-item:hover { background: #21262d; color: var(--accent); }
+
+        /* La "Tarjetita" de descripción */
+        .file-item .desc-box {
+            display: none; position: absolute; left: 100%; top: 0;
+            width: 240px; background: #ffffff; color: #1f2328;
+            padding: 12px; border-radius: 8px; border-left: 4px solid var(--accent);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5); z-index: 999;
+            font-size: 11px; line-height: 1.4; pointer-events: none;
+        }
+        .file-item:hover .desc-box { display: block; }
+        .desc-box b { display: block; color: #0969da; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+        /* Área Central */
+        .viz { position: relative; background: #010409; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+        .node-list { display: flex; gap: 15px; flex-wrap: wrap; justify-content: center; z-index: 5; max-width: 500px; }
+        .node { background: #21262d; border: 1px solid #30363d; padding: 10px; border-radius: 6px; width: 110px; text-align: center; font-size: 11px; transition: 0.3s; }
+        .node.active { border-color: var(--accent); box-shadow: 0 0 15px var(--accent); transform: scale(1.05); }
+
+        /* Render Zone */
+        .render-box { margin-top: 2rem; height: 240px; width: 100%; border-top: 1px dashed #30363d; display: flex; justify-content: center; align-items: center; }
+        .pk-card {
+            background: white; color: black; padding: 15px; border-radius: 12px; text-align: center;
+            width: 140px; border: 4px solid #3b4cca; animation: pop 0.4s ease-out; box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+            transition: all 0.3s ease;
+        }
+        .pk-card img { width: 90px; }
+        .pk-card.shiny { border-color: #ffde00; background: #fffdf0; box-shadow: 0 0 20px #ffde00; }
+        .pk-card button { background: #238636; color: white; border: none; padding: 6px 12px; border-radius: 5px; cursor: pointer; margin-top: 10px; font-weight: bold; }
+        .pk-card button.btn-shiny { background: #e62222; }
+
+        /* Consola Numerada */
+        .console-area { background: #010409; border-left: 1px solid #30363d; display: flex; flex-direction: column; }
+        .log-container { flex-grow: 1; padding: 20px; overflow-y: auto; font-family: 'Consolas', monospace; font-size: 12px; color: #a5d6ff; }
+        .log-row { display: flex; gap: 12px; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #161b22; }
+        .step-num { 
+            background: var(--accent); color: #000; font-weight: bold; 
+            min-width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 4px;
+        }
+
+        .particle { position: absolute; width: 12px; height: 12px; border-radius: 50%; display: none; z-index: 100; }
+        footer { padding: 15px; background: var(--side); border-top: 1px solid #30363d; text-align: center; }
+        .play-btn { background: var(--success); color: white; border: none; padding: 12px 30px; border-radius: 6px; font-weight: bold; cursor: pointer; }
+        @keyframes pop { from { transform: scale(0); } to { transform: scale(1); } }
+    </style>
+</head>
+<body>
+
+<div class="main-grid">
+    <div class="sidebar">
+        <div style="font-weight: bold; color: #8b949e; margin-bottom: 15px; font-size: 11px;">PROYECTO: CL3 / clase2</div>
+        
+        <div class="file-item">📄 index.html
+            <div class="desc-box"><b>Definición:</b> Raíz del proyecto.<br>Es el archivo HTML base que contiene el <code>&lt;div id="root"&gt;</code> donde se montará React.</div>
+        </div>
+
+        <div style="margin: 10px 0 5px 5px; font-size: 11px; color: #484f58;">📁 src</div>
+        
+        <div class="file-item" style="margin-left: 15px;">📄 main.tsx
+            <div class="desc-box"><b>Definición:</b> Puerta de entrada.<br>Conecta la lógica de React con el DOM real del navegador usando el ID root.</div>
+        </div>
+
+        <div class="file-item" style="margin-left: 15px;">📄 App.tsx
+            <div class="desc-box"><b>Definición:</b> Componente General.<br>Organiza la estructura de la página y reparte los datos del Hook a las Cards.</div>
+        </div>
+
+        <div class="file-item" style="margin-left: 15px;">📁 hooks</div>
+        <div class="file-item" style="margin-left: 30px;">📄 usePokemons.ts
+            <div class="desc-box"><b>Definición:</b> Motor de Datos.<br>Maneja el <code>fetch</code> a la API y el estado global (<code>useState</code>).</div>
+        </div>
+
+        <div class="file-item" style="margin-left: 15px;">📁 components</div>
+        <div class="file-item" style="margin-left: 30px;">📄 Card.tsx
+            <div class="desc-box"><b>Definición:</b> Interfaz Visual.<br>Recibe propiedades (props) y las muestra. Detecta los clics del usuario.</div>
+        </div>
+        <div class="file-item" style="margin-left: 30px;"># Card.css
+            <div class="desc-box"><b>Definición:</b> Hoja de estilos.<br>Contiene las reglas visuales para los estados normal y shiny (colores, bordes).</div>
+        </div>
+    </div>
+
+    <div class="viz" id="map">
+        <canvas id="canvas"></canvas>
+        <div id="particle" class="particle"></div>
+        <div class="node-list">
+            <div class="node" id="n-html">index.html</div>
+            <div class="node" id="n-main">main.tsx</div>
+            <div class="node" id="n-hook">usePokemons.ts</div>
+            <div class="node" id="n-app">App.tsx</div>
+            <div class="node" id="n-card">Card.tsx</div>
+        </div>
+        <div class="render-box" id="render-zone">
+            <div style="color: #30363d; font-style: italic;">Inicia el ciclo para ver el flujo...</div>
+        </div>
+    </div>
+
+    <div class="console-area">
+        <div style="padding: 12px; background: #161b22; font-size: 11px; font-weight: bold; border-bottom: 1px solid #30363d;">CONSOLA DE EVENTOS</div>
+        <div class="log-container" id="log-box">
+            <p>> Sistema listo. Haz clic en el botón inferior.</p>
+        </div>
+    </div>
+</div>
+
+<footer>
+    <button class="play-btn" id="startBtn" onclick="run()">NPM RUN DEV</button>
+</footer>
+
+<script>
+    const logBox = document.getElementById('log-box');
+    const particle = document.getElementById('particle');
+    const renderZone = document.getElementById('render-zone');
+    const startBtn = document.getElementById('startBtn');
+    let step = 1;
+
+    function addLog(txt) {
+        const div = document.createElement('div');
+        div.className = 'log-row';
+        div.innerHTML = `<div class="step-num">${step++}</div><div>${txt}</div>`;
+        logBox.prepend(div);
+    }
+
+    function getCoords(id) {
+        const el = document.getElementById(id);
+        const r = el.getBoundingClientRect();
+        const m = document.getElementById('map').getBoundingClientRect();
+        return { x: r.left - m.left + r.width/2, y: r.top - m.top + r.height/2, el };
+    }
+
+    async function flow(from, to, color = '#58a6ff') {
+        const p1 = getCoords(from); const p2 = getCoords(to);
+        particle.style.display = 'block'; particle.style.background = color;
+        particle.style.boxShadow = `0 0 15px ${color}`;
+        return new Promise(res => {
+            let p = 0;
+            function anim() {
+                p += 0.02;
+                particle.style.left = (p1.x + (p2.x - p1.x) * p) + 'px';
+                particle.style.top = (p1.y + (p2.y - p1.y) * p) + 'px';
+                if(p < 1) requestAnimationFrame(anim);
+                else {
+                    particle.style.display = 'none';
+                    p2.el.classList.add('active');
+                    setTimeout(() => { p2.el.classList.remove('active'); res(); }, 600);
+                }
+            }
+            anim();
+        });
+    }
+
+    async function run() {
+        startBtn.disabled = true; step = 1; logBox.innerHTML = '';
+        addLog("<b>Inicio:</b> El navegador carga <code>index.html</code> (Plantilla base).");
+        await flow('n-html', 'n-main', '#e34c26');
+
+        addLog("<b>Enlace:</b> <code>main.tsx</code> busca el div con <code>id='root'</code>.");
+        await flow('n-main', 'n-app');
+
+        addLog("<b>Lógica:</b> <code>usePokemons</code> inicia el fetch y procesa el JSON.");
+        await flow('n-app', 'n-hook');
+
+        addLog("<b>Estado:</b> El Hook devuelve el listado cargado a <code>App.tsx</code>.");
+        await flow('n-hook', 'n-app');
+
+        addLog("<b>Render:</b> App genera la <code>Card.tsx</code> inyectando las props.");
+        await flow('n-app', 'n-card');
+
+        renderZone.innerHTML = `
+            <div class="pk-card" id="pk">
+                <img id="pk-img" src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/25.png">
+                <h4 id="pk-name">Pikachu</h4>
+                <button id="pk-btn" onclick="evolve()">EVOLUCIONAR</button>
+            </div>`;
+        addLog("<b>Final:</b> ¡Interfaz dibujada y lista!");
+    }
+
+    async function evolve() {
+        const pkCard = document.getElementById('pk');
+        const pkImg = document.getElementById('pk-img');
+        const pkName = document.getElementById('pk-name');
+        const pkBtn = document.getElementById('pk-btn');
+        const isShiny = pkCard.classList.contains('shiny');
+
+        // Reiniciar contador de pasos para la interacción si se desea, o continuar
+        addLog(isShiny ? "<b>Acción:</b> Click. Des-evolucionando..." : "<b>Acción:</b> Click. Evolucionando...");
+        await flow('n-card', 'n-app', '#d29922');
+        
+        addLog("<b>Actualización:</b> Se altera el estado en el Hook.");
+        await flow('n-app', 'n-hook', '#d29922');
+        
+        // Lógica de Toggle (Alternar)
+        if (isShiny) {
+            pkCard.classList.remove('shiny');
+            pkImg.src = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/25.png";
+            pkName.innerText = "Pikachu";
+            pkBtn.innerText = "EVOLUCIONAR";
+            pkBtn.className = "";
+            addLog("<b>Re-render:</b> Estado base restaurado.");
+        } else {
+            pkCard.classList.add('shiny');
+            pkImg.src = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/shiny/25.png";
+            pkName.innerText = "Pikachu Shiny";
+            pkBtn.innerText = "REVERTIR";
+            pkBtn.className = "btn-shiny";
+            addLog("<b>Re-render:</b> Estado Shiny aplicado.");
+        }
+        
+        await flow('n-hook', 'n-app');
+        await flow('n-app', 'n-card');
+        startBtn.disabled = false;
+    }
+
+    window.onload = () => {
+        const c = document.getElementById('canvas');
+        c.width = c.offsetWidth; c.height = c.offsetHeight;
+        const ctx = c.getContext('2d');
+        ctx.strokeStyle = '#30363d'; ctx.setLineDash([5, 5]);
+        const pts = ['n-html', 'n-main', 'n-app', 'n-hook', 'n-app', 'n-card'];
+        ctx.beginPath();
+        for(let i=0; i < pts.length-1; i++) {
+            const p1 = getCoords(pts[i]); const p2 = getCoords(pts[i+1]);
+            ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y);
+        }
+        ctx.stroke();
+    };
+</script>
+</body>
+</html>
